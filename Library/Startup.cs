@@ -44,6 +44,24 @@ namespace Library
                 setupAction.ReturnHttpNotAcceptable = true;
                 setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
                 setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
+
+                var jsonInputFormatter = setupAction.InputFormatters
+                    .OfType<JsonInputFormatter>().FirstOrDefault();
+
+                if (jsonInputFormatter != null)
+                {
+                    jsonInputFormatter.SupportedMediaTypes.Add("application/vnd.orhun.authorwithdateofdeath.full+json");
+                    jsonInputFormatter.SupportedMediaTypes.Add("application/vnd.orhun.authorwithdateofdeath.full+xml");
+                    jsonInputFormatter.SupportedMediaTypes.Add("application/vnd.orhun.author.full+json");                                       
+                }
+
+                var jsonOutputFormatter = setupAction.OutputFormatters
+                    .OfType<JsonOutputFormatter>().FirstOrDefault();
+
+                if (jsonOutputFormatter != null)
+                {
+                    jsonOutputFormatter.SupportedMediaTypes.Add("application/vnd.orhun.hateoas+json");
+                }                
             })
             .AddJsonOptions(options => 
             {
@@ -92,16 +110,19 @@ namespace Library
 
             Mapper.Initialize(cfg => {
                 cfg.CreateMap<Author, AuthorDto>()
-                    .ForMember(dest => dest.Name, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
-                    .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge()));
+                    .ForMember(dest => dest.Name, opt => 
+                        opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
+                    .ForMember(dest => dest.Age, opt => 
+                        opt.MapFrom(src => src.DateOfBirth.GetCurrentAge(src.DateOfDeath)));
                 cfg.CreateMap<Book, BookDto>();
                 cfg.CreateMap<AuthorForCreationDto, Author>();
                 cfg.CreateMap<BookForCreationDto, Book>();
                 cfg.CreateMap<BookForUpdateDto, Book>();
                 cfg.CreateMap<Book, BookForUpdateDto>();
+                cfg.CreateMap<AuthorForCreationWithDateOfDeathDto, Author>();
             });
 
-            libraryContext.EnsureSeedDataForContext();
+            //libraryContext.EnsureSeedDataForContext();
             app.UseMvc(routes => {
                 routes.Routes.Add(new CustomRouter(routes.DefaultHandler));
             });
